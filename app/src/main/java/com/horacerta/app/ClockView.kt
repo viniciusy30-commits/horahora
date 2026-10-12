@@ -21,6 +21,15 @@ class ClockView @JvmOverloads constructor(
             invalidate()
         }
 
+    var accentColor: Int = 0xFF4FD1C5.toInt()
+        set(value) {
+            field = value
+            ringPaint.color = value
+            secondPaint.color = value
+            hubPaint.color = value
+            invalidate()
+        }
+
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 

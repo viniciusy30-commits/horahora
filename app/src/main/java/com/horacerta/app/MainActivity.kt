@@ -1,11 +1,16 @@
 package com.horacerta.app
 
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.ColorUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -26,6 +31,13 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val ptBR = Locale("pt", "BR")
     private val prefs by lazy { getSharedPreferences("hora_prefs", MODE_PRIVATE) }
+
+    private val cores = listOf(
+        "Turquesa" to 0xFF4FD1C5.toInt(),
+        "Vermelho" to 0xFFFF4D4D.toInt(),
+        "Azul" to 0xFF5B9DFF.toInt(),
+        "Roxo" to 0xFFB47CFF.toInt()
+    )
 
     private var fmt24 = SimpleDateFormat("HH:mm", ptBR)
     private var fmt12 = SimpleDateFormat("hh:mm", ptBR)
@@ -54,7 +66,7 @@ class MainActivity : AppCompatActivity() {
 
         applyPrefs()
 
-        val content = findViewById<android.view.View>(R.id.content)
+        val content = findViewById<View>(R.id.content)
         content.alpha = 0f
         content.translationY = 40f
         content.animate().alpha(1f).translationY(0f).setDuration(600).start()
@@ -83,10 +95,19 @@ class MainActivity : AppCompatActivity() {
         fmtDate = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", ptBR)
     }
 
+    private fun accent(): Int = prefs.getInt("accent", cores[0].second)
+
+    private fun applyAccent() {
+        val c = accent()
+        clock.accentColor = c
+        tvSeconds.setTextColor(c)
+    }
+
     private fun applyPrefs() {
         val showSec = prefs.getBoolean("seconds", true)
         clock.showSecondHand = showSec
-        tvSeconds.visibility = if (showSec) android.view.View.VISIBLE else android.view.View.GONE
+        tvSeconds.visibility = if (showSec) View.VISIBLE else View.GONE
+        applyAccent()
         updateTexts()
     }
 
@@ -100,14 +121,16 @@ class MainActivity : AppCompatActivity() {
         setIfChanged(tvTime, (if (is24) fmt24 else fmt12).format(now))
         setIfChanged(tvSeconds, fmtSec.format(now))
         if (is24) {
-            tvAmPm.visibility = android.view.View.GONE
+            tvAmPm.visibility = View.GONE
         } else {
-            tvAmPm.visibility = android.view.View.VISIBLE
+            tvAmPm.visibility = View.VISIBLE
             setIfChanged(tvAmPm, fmtAmPm.format(now).uppercase(ptBR))
         }
         setIfChanged(tvDate, fmtDate.format(now).replaceFirstChar { it.uppercase(ptBR) })
         setIfChanged(tvZone, "Fuso horário: " + TimeZone.getDefault().id)
     }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     private fun showSettings() {
         val v = layoutInflater.inflate(R.layout.dialog_settings, null)
@@ -126,9 +149,44 @@ class MainActivity : AppCompatActivity() {
             applyPrefs()
         }
 
-        v.findViewById<MaterialButton>(R.id.btnUpdate).setOnClickListener {
-            Updater.check(this, true)
+        val btnUpdate = v.findViewById<MaterialButton>(R.id.btnUpdate)
+        btnUpdate.setOnClickListener { Updater.check(this, true) }
+
+        val row = v.findViewById<LinearLayout>(R.id.colorRow)
+
+        fun estilizarBotao() {
+            val c = accent()
+            btnUpdate.setBackgroundColor(c)
+            btnUpdate.setTextColor(
+                if (ColorUtils.calculateLuminance(c) > 0.5) 0xFF00201D.toInt() else Color.WHITE
+            )
         }
+
+        fun montarCores() {
+            row.removeAllViews()
+            for ((nome, cor) in cores) {
+                val dot = View(this)
+                val lp = LinearLayout.LayoutParams(dp(40), dp(40))
+                lp.marginEnd = dp(14)
+                dot.layoutParams = lp
+                dot.contentDescription = nome
+                dot.background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(cor)
+                    if (cor == accent()) setStroke(dp(3), Color.WHITE)
+                }
+                dot.setOnClickListener {
+                    prefs.edit().putInt("accent", cor).apply()
+                    applyAccent()
+                    montarCores()
+                    estilizarBotao()
+                }
+                row.addView(dot)
+            }
+        }
+
+        montarCores()
+        estilizarBotao()
 
         val versionName = try {
             packageManager.getPackageInfo(packageName, 0).versionName

@@ -1,3 +1,8 @@
+#id 2026-10-12-b
+#titulo Escolha a cor do app
+- Nas configurações, escolha a cor: Turquesa, Vermelho, Azul ou Roxo
+- A cor vale para o relógio, os segundos e o botão de atualização
+
 #id 2026-10-12-a
 #titulo Primeira versão
 - Relógio analógico com ponteiro de segundos suave
