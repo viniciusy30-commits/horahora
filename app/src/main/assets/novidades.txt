@@ -1,0 +1,6 @@
+#id 2026-10-12-a
+#titulo Primeira versão
+- Relógio analógico com ponteiro de segundos suave
+- Hora digital e data completa em português
+- Opções de 24 horas e de mostrar segundos
+- Atualização pelo próprio app
